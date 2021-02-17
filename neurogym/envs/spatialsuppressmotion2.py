@@ -69,7 +69,7 @@ class SpatialSuppressMotion(ngym.TrialEnv):
     def _new_trial(self, diameter=None, contrast=None, direction=None):
         '''
         To define a stimulus, we need diameter, contrast, duration, direction
-        <diameter>: 0~11, stimulus size in norm units
+        <diameter>: 0~8, stimulus size in norm units
         <contrast>: 0~1, stimulus contrast
         <direction>: int(1/2/3/4), left/right/up/down
         '''
@@ -80,10 +80,12 @@ class SpatialSuppressMotion(ngym.TrialEnv):
             direction = self.rng.choice(self.directions)
         if contrast is None:
             #contrast = self.rng.uniform(0, 1) # stimlus contrast
-            contrast = self.rng.choice([0.05, 0.99])  # high/low contrast
-        if diameter is None:
-            #diameter = self.rng.uniform(0, 11) # stimlus size
-            diameter = self.rng.choice([1, 11])  # small/large size
+            contrast = self.rng.choice([0.05, 0.99])  # Low contrast, and high contrast
+        # here we only consider small-low contrast and large-high contrast condition
+        if contrast == 0.05: # small low contrast
+            diameter = 1
+        elif contrast == 0.99: # large high contrast
+            diameter = 8
         
         trial = {
             'diameter': diameter,
@@ -107,8 +109,8 @@ class SpatialSuppressMotion(ngym.TrialEnv):
         stim = (np.cos(np.array(self.theta) - self.theta[direction-1])+1) * contrast / 2       
         stim = np.tile(stim, [diameter, 1])
 
-        if diameter != 11:
-            tmp = np.zeros((11-diameter, 4))
+        if diameter != 8:
+            tmp = np.zeros((8-diameter, 4))
             stim = np.vstack((stim, tmp)).T.flatten()
         stim = stim.T.flatten()
         stim = np.tile(stim, [ob.shape[0], 1])
@@ -150,7 +152,8 @@ class SpatialSuppressMotion(ngym.TrialEnv):
         from numpy import zeros
         
         #duration = [5, 7.296, 10.65, 15.54, 22.67, 33.08, 48.27, 70.44, 102.8]
-        frame_ind = [8, 9, 10, 11, 12, 14, 17, 20, 28, 37, 38, 39] # this is derived by envelop.m function
+        #frame_ind = [self.envelope(i/1000)[1] for i in duration]
+        frame_ind = [8, 9, 10, 13, 15, 18, 21, 28, 36, 37, 38, 39] # this is derived by envelop.m function
         xx = [1, 2, 3, 4, 5, 6, 7]
         yy = [0.249] * 7
 
@@ -160,24 +163,19 @@ class SpatialSuppressMotion(ngym.TrialEnv):
         seq_len = self.view_ob(period='stimulus').shape[0]
         xnew = np.arange(seq_len)
 
-        if trial['diameter'] == 1 & trial['contrast'] == 0.05: # small low contrast
-            prob_corr = yy + [0.2889, 0.2278, 0.2944, 0.2722, 0.4611, 0.7167, 0.9000, 0.9611, 0.9444, 0.9611, 0.99, 0.99]
-            prob_anti = yy + [0.2556, 0.2778, 0.2667, 0.2611, 0.2056, 0.0889, 0.0500, 0.0222, 0.0500, 0.0333, 0.003, 0.003]
+        if trial['contrast'] > 0.5:
+            # large size (11 deg radius), High contrast
+            prob_corr = yy + [0.249, 0.249, 0.249, 0.27, 0.32, 0.4583, 0.65, 0.85, 0.99, 0.99, 0.99, 0.99]
+            prob_anti = yy + [0.249, 0.29, 0.31, 0.4, 0.475, 0.4167, 0.3083, 0.075, 0.04, 0.04, 0.03, 0.03]
         
-        elif trial['diameter'] == 11 & trial['contrast'] == 0.99: # large high contrast
-            prob_corr = yy + [0.2056, 0.2167, 0.2833, 0.2389, 0.4000, 0.7444, 0.8833, 0.9389, 0.9333, 0.9833, 0.99, 0.99]
-            prob_anti = yy + [0.2667, 0.2444, 0.2722, 0.3611, 0.4333, 0.2222, 0.1111, 0.0556, 0.0611, 0.0111, 0.003, 0.003]
-
-        elif trial['diameter'] == 1 & trial['contrast'] == 0.99: # small high contrast, note here we smooth the curve
-            prob_corr = [0.2500, 0.2500, 0.2685, 0.2870, 0.3056, 0.3241, 0.3426] + [0.3889, 0.3611, 0.4111, 0.5556, 0.7833, 0.9056, 0.9444, 0.9889, 0.9944, 0.99, 0.99, 0.99]
-            prob_anti = [0.2500, 0.2500, 0.2639, 0.2778, 0.2917, 0.3056, 0.3194] + [0.3389, 0.3333, 0.3278, 0.2833, 0.1889, 0.0833, 0.0444, 0.0111, 0.0056, 0.003, 0.003, 0.003]
-
-        elif trial['diameter'] == 11 & trial['contrast'] == 0.05: # large low contrast:
-            prob_corr = yy + [0.2278, 0.2611, 0.3222, 0.3333, 0.7944, 0.9778, 0.9778, 0.9833, 0.9889, 0.9944, 0.9944, 0.9944]
-            prob_anti = yy + [0.2333, 0.2333, 0.2111, 0.1611, 0.1222, 0.0111, 0.0222, 0.0167, 0.0111, 0.0056, 0.0056, 0.0056]
+        elif trial['contrast'] < 0.5:
+            # large size (11 deg radius), low contrast
+            prob_corr = yy + [0.25, 0.26, 0.2583, 0.325, 0.45, 0.575, 0.875, 0.933, 0.99, 0.99, 0.99,0.99]
+            prob_anti = yy + [0.25, 0.26, 0.2583, 0.267, 0.1417, 0.1167, 0.058, 0.016, 0.003, 0.003, 0.003, 0.003]
         
         corr_prob = interp1d(frame_ind, prob_corr, kind='slinear', fill_value='extrapolate')(xnew)
-        anti_prob = interp1d(frame_ind, prob_anti, kind='slinear', fill_value='extrapolate')(xnew)
+        anti_prob = interp1d(frame_ind, prob_anti,
+                             kind='slinear', fill_value='extrapolate')(xnew)
         ortho_prob = (1-(corr_prob + anti_prob)) / 2
         
         direction = trial['direction']-1
