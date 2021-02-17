@@ -9,7 +9,7 @@ import neurogym as ngym
 import sys
 
 
-class SpatialSuppressMotion(ngym.TrialEnv):
+class SpatialSuppressMotion2(ngym.TrialEnv):
     '''
     Spatial suppression motion task. This task is useful to study center-surround interaction in monkey MT and human psychophysical performance in motion perception.
 

@@ -15,7 +15,7 @@ class SpatialSuppressMotion(ngym.TrialEnv):
 
     Tha task is derived from (Tadin et al. Nature, 2003). In this task, there is no fixation or decision stage. We only present a stimulus and a subject needs to perform a 4-AFC motion direction judgement. The ground-truth is the probabilities for choosing the four directions at a given time point. The probabilities depend on stimulus contrast and size, and the probabilities are derived from emprically measured human psychophysical performance.
 
-    In this version, the input size is 4 (directions) x 8 (size) = 32 neurons. This setting aims to simulate four pools (8 neurons in each pool) of neurons that are selective for four directions. 
+    In this version, the input size is 4 (directions) x 11 (size) = 44 neurons. This setting aims to simulate four pools (11 neurons in each pool) of neurons that are selective for four directions. 
 
     Args:
         <dt>: millisecs per image frame, default: 8.3 (given 120HZ monitor)
@@ -57,7 +57,7 @@ class SpatialSuppressMotion(ngym.TrialEnv):
         
         # define observation space
         self.observation_space = spaces.Box(
-            0, np.inf, shape=(32,), dtype=np.float32) # observation space, 4 directions * 8 sizes
+            0, np.inf, shape=(44,), dtype=np.float32) # observation space, 4 directions * 11 sizes
         # larger stimulus could elicit more neurons to fire
 
         self.directions = [1, 2, 3, 4] # motion direction left/right/up/down
@@ -107,6 +107,8 @@ class SpatialSuppressMotion(ngym.TrialEnv):
         stim = (np.cos(np.array(self.theta) - self.theta[direction-1])+1) * contrast / 2       
         stim = np.tile(stim, [diameter, 1])
 
+        #import ipdb;ipdb.set_trace();import matplotlib.pyplot as plt;
+
         if diameter != 11:
             tmp = np.zeros((11-diameter, 4))
             stim = np.vstack((stim, tmp)).T.flatten()
@@ -155,24 +157,24 @@ class SpatialSuppressMotion(ngym.TrialEnv):
         yy = [0.249] * 7
 
         frame_ind = xx + frame_ind  # to fill in the first a few frames
-        frame_ind = [i-1 for i in frame_ind] # frame index start from
+        frame_ind = [i-1 for i in frame_ind] # frame index start from 0
         
         seq_len = self.view_ob(period='stimulus').shape[0]
         xnew = np.arange(seq_len)
 
-        if trial['diameter'] == 1 & trial['contrast'] == 0.05: # small low contrast
+        if trial['diameter'] == 1 and trial['contrast'] == 0.05: # small low contrast
             prob_corr = yy + [0.2889, 0.2278, 0.2944, 0.2722, 0.4611, 0.7167, 0.9000, 0.9611, 0.9444, 0.9611, 0.99, 0.99]
             prob_anti = yy + [0.2556, 0.2778, 0.2667, 0.2611, 0.2056, 0.0889, 0.0500, 0.0222, 0.0500, 0.0333, 0.003, 0.003]
         
-        elif trial['diameter'] == 11 & trial['contrast'] == 0.99: # large high contrast
+        elif trial['diameter'] == 11 and trial['contrast'] == 0.99: # large high contrast
             prob_corr = yy + [0.2056, 0.2167, 0.2833, 0.2389, 0.4000, 0.7444, 0.8833, 0.9389, 0.9333, 0.9833, 0.99, 0.99]
             prob_anti = yy + [0.2667, 0.2444, 0.2722, 0.3611, 0.4333, 0.2222, 0.1111, 0.0556, 0.0611, 0.0111, 0.003, 0.003]
 
-        elif trial['diameter'] == 1 & trial['contrast'] == 0.99: # small high contrast, note here we smooth the curve
+        elif trial['diameter'] == 1 and trial['contrast'] == 0.99: # small high contrast, note here we smooth the curve
             prob_corr = [0.2500, 0.2500, 0.2685, 0.2870, 0.3056, 0.3241, 0.3426] + [0.3889, 0.3611, 0.4111, 0.5556, 0.7833, 0.9056, 0.9444, 0.9889, 0.9944, 0.99, 0.99, 0.99]
             prob_anti = [0.2500, 0.2500, 0.2639, 0.2778, 0.2917, 0.3056, 0.3194] + [0.3389, 0.3333, 0.3278, 0.2833, 0.1889, 0.0833, 0.0444, 0.0111, 0.0056, 0.003, 0.003, 0.003]
 
-        elif trial['diameter'] == 11 & trial['contrast'] == 0.05: # large low contrast:
+        elif trial['diameter'] == 11 and trial['contrast'] == 0.05: # large low contrast:
             prob_corr = yy + [0.2278, 0.2611, 0.3222, 0.3333, 0.7944, 0.9778, 0.9778, 0.9833, 0.9889, 0.9944, 0.9944, 0.9944]
             prob_anti = yy + [0.2333, 0.2333, 0.2111, 0.1611, 0.1222, 0.0111, 0.0222, 0.0167, 0.0111, 0.0056, 0.0056, 0.0056]
         
